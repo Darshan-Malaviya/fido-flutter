@@ -1,11 +1,10 @@
 // ignore_for_file: prefer_const_constructors, avoid_print, use_build_context_synchronously, unnecessary_import, implementation_imports
 
-import 'package:fido2_client/registration_result.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 
-import 'package:fido2_client/fido2_client.dart';
 import 'constant.dart';
 import 'utilities.dart';
 
@@ -18,16 +17,45 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String username = "";
-  Fido2Client fido2Client = Fido2Client();
+  static const fidoChannel = MethodChannel(fidoMethodChannel);
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     setUsername();
+    fidoChannel.setMethodCallHandler(_handleMethod);
   }
 
-  registerWebuth() async {
+  Future<dynamic> _handleMethod(MethodCall call) async {
+    switch (call.method) {
+      case "onRegistrationComplete":
+        Map args = call.arguments;
+        String keyHandleBase64 = args['keyHandle'];
+        await KeyRepository.storeKeyHandle(keyHandleBase64, username);
+        print("args $args");
+        // registerResponse(args);
+        break;
+      case "onSigningComplete":
+        break;
+      case 'onRegAuthError':
+        Map args = call.arguments;
+        String errorName = args['errorName'];
+        String errorMsg = args['errorMsg'];
+        // _signCompleter.completeError(AuthenticatorError(errorName, errorMsg));
+        break;
+      case 'onSignAuthError':
+        Map args = call.arguments;
+        String errorName = args['errorName'];
+        String errorMsg = args['errorMsg'];
+        // _signCompleter.completeError(AuthenticatorError(errorName, errorMsg));
+        break;
+      default:
+        throw ('Method not defined');
+    }
+  }
+
+  registerRequest() async {
     Map<String, dynamic> options = {
       "attestation": "none",
       "authenticatorSelection": {
@@ -37,13 +65,40 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     };
 
-    Map<String, dynamic> response = await postRequest("/auth/registerRequest", options);
-    // print(response);
-    RegistrationResult registrationResult = await fido2Client.initiateRegistration(
-      response["challenge"],
-      response["user"]["id"],
-      response,
-    );
+    Map<String, dynamic> response =
+        await postRequest("/auth/registerRequest", options, true, false);
+    if (response != null) {
+      try {
+        String result = await fidoChannel.invokeMethod("createCredentials", response);
+        print(result);
+      } on PlatformException catch (e) {
+        print(e);
+      }
+    } else {}
+  }
+
+  registerResponse(Map args) async {
+    Map<String, dynamic> options = {
+      'id': args['keyHandle'],
+      'type': 'public-key',
+      'rawId': args['keyHandle'],
+      'response': {
+        'clientDataJSON': args['clientDataJSON'],
+        'attestationObject': args['attestationObject'],
+      }
+    };
+
+    Map<String, dynamic> response =
+        await postRequest("/auth/registerResponse", options, true, false);
+
+    if (response != null) {
+      // try {
+      //   String result = await fidoChannel.invokeMethod("createCredentials", response);
+      print(response);
+      // } on PlatformException catch (e) {
+      //   print(e);
+      // }
+    } else {}
   }
 
   setUsername() async {
@@ -76,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 30,
               ),
               ElevatedButton(
-                onPressed: () => registerWebuth(),
+                onPressed: () => registerRequest(),
                 child: Text("Register a new Authn"),
               )
             ],

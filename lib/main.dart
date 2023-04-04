@@ -1,11 +1,15 @@
 // ignore_for_file: avoid_unnecessary_containers, prefer_const_literals_to_create_immutables, prefer_const_constructors
 
+import 'dart:io';
+
+import 'package:fido/utilities.dart';
 import 'package:flutter/material.dart';
 
 import 'constant.dart';
 import 'register.dart';
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
 

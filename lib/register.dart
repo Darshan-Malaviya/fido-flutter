@@ -22,7 +22,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController usernameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  // TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
 
@@ -30,36 +30,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     isLoading = true;
     setState(() {});
 
-    final http.Response response = await http.post(
-      Uri.parse("$BASE_URL/auth/registerUser"),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode({
-        "username": usernameController.text.trim(),
-        "password": passwordController.text.trim(),
-      }),
-    );
-    if (response.statusCode == 200) {
-      dynamic body = jsonDecode(response.body);
-      debugPrint(body.toString());
-      if (body["status"] == "error") {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(body["message"]),
-          duration: Duration(milliseconds: 500),
-        ));
-      } else {
-        setStringValue("cookie", response.headers['set-cookie'].toString());
-        setStringValue("username", usernameController.text);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (builder) => HomeScreen()),
-          (route) => false,
-        );
-      }
-    } else {
-      debugPrint(response.statusCode.toString());
-      throw Exception('Failed to load album');
+    Map<String, dynamic> options = {
+      "username": usernameController.text.trim(),
+    };
+
+    var response = await postRequest("/auth/username", options, false, true);
+    if (response != null) {
+      var username = response['username'].toString();
+      setStringValue("username", username);
+      Navigator.of(contextMain!).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (builder) => LoginScreen()),
+        (route) => false,
+      );
     }
+
     isLoading = false;
     setState(() {});
   }
@@ -69,7 +53,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // ignore: todo
     // TODO: implement dispose
     usernameController.dispose();
-    passwordController.dispose();
     super.dispose();
   }
 
@@ -79,24 +62,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Fido Demo"),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: IconButton(
-              icon: Icon(Icons.login),
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => LoginScreen()));
-              },
-            ),
-          )
-        ],
       ),
       body: Container(
         padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
           children: [
             Text(
-              "Register User",
+              "Username",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -127,28 +99,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(
               height: 15,
             ),
-            TextFormField(
-              controller: passwordController,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                icon: Icon(Icons.password),
-                labelText: "Password",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  // borderSide: BorderSide(color: Colors.lightBlueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 15,
-            ),
+            // TextFormField(
+            //   controller: passwordController,
+            //   textInputAction: TextInputAction.done,
+            //   decoration: const InputDecoration(
+            //     icon: Icon(Icons.password),
+            //     labelText: "Password",
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //     enabledBorder: OutlineInputBorder(
+            //       // borderSide: BorderSide(color: Colors.lightBlueAccent, width: 1.0),
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //     focusedBorder: OutlineInputBorder(
+            //       borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2.0),
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //   ),
+            // ),
+            // SizedBox(
+            //   height: 15,
+            // ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16.0)),
               onPressed: isLoading ? null : onSubmit,

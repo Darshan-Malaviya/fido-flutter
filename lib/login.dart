@@ -18,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  TextEditingController usernameController = TextEditingController();
+  // TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
@@ -27,36 +27,18 @@ class _LoginScreenState extends State<LoginScreen> {
     isLoading = true;
     setState(() {});
 
-    final http.Response response = await http.post(
-      Uri.parse("$BASE_URL/auth/loginUser"),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode({
-        "username": usernameController.text.trim(),
-        "password": passwordController.text.trim(),
-      }),
-    );
-    if (response.statusCode == 200) {
-      dynamic body = jsonDecode(response.body);
-      debugPrint(body.toString());
-      if (body["status"] == "error") {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(body["message"]),
-          duration: Duration(milliseconds: 500),
-        ));
-      } else {
-        setStringValue("cookie", response.headers['set-cookie'].toString());
-        setStringValue("username", usernameController.text);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (builder) => HomeScreen()),
-          (route) => false,
-        );
-      }
-    } else {
-      debugPrint(response.statusCode.toString());
-      throw Exception('Failed to load album');
+    Map<String, dynamic> options = {
+      "password": passwordController.text.trim(),
+    };
+
+    var response = await postRequest("/auth/password", options, true, false);
+    if (response != null) {
+      Navigator.of(contextMain!).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (builder) => HomeScreen()),
+        (route) => false,
+      );
     }
+
     isLoading = false;
     setState(() {});
   }
@@ -64,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     // TODO: implement dispose
-    usernameController.dispose();
+    // usernameController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -75,28 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Fido Demo"),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: IconButton(
-              icon: Icon(Icons.person_add),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => RegisterScreen(),
-                  ),
-                );
-              },
-            ),
-          )
-        ],
       ),
       body: Container(
         padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
           children: [
             Text(
-              "Login",
+              "password",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -105,28 +72,28 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               height: 15,
             ),
-            TextFormField(
-              controller: usernameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                icon: Icon(Icons.person),
-                labelText: "Username",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  // borderSide: BorderSide(color: Colors.lightBlueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 15,
-            ),
+            // TextFormField(
+            //   controller: usernameController,
+            //   textInputAction: TextInputAction.next,
+            //   decoration: const InputDecoration(
+            //     icon: Icon(Icons.person),
+            //     labelText: "Username",
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //     enabledBorder: OutlineInputBorder(
+            //       // borderSide: BorderSide(color: Colors.lightBlueAccent, width: 1.0),
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //     focusedBorder: OutlineInputBorder(
+            //       borderSide: BorderSide(color: Colors.lightBlueAccent, width: 2.0),
+            //       borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            //     ),
+            //   ),
+            // ),
+            // SizedBox(
+            //   height: 15,
+            // ),
             TextFormField(
               controller: passwordController,
               textInputAction: TextInputAction.done,
